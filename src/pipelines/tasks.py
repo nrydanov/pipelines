@@ -1,4 +1,6 @@
-import sys, inspect
+import sys, inspect, os
+
+from pathlib import Path
 
 import pandas as pd
 from sqlalchemy import text
@@ -25,7 +27,8 @@ class SaveToFile(SqlTask):
   def __init__(self, **kwargs) -> None:
     super().__init__()
     self.input = kwargs['input']
-    self.output = kwargs['output']
+    self.output = f"data/{kwargs['output']}"
+    os.makedirs(Path(self.output).parent, exist_ok=True)
   
   def run(self) -> None:
     with self._engine.connect() as conn:  

@@ -21,7 +21,7 @@ pipeline = Pipeline(
         ),
         SaveToFile(
             input='norm',
-            output='norm.csv',
+            output='norm/norm.csv',
         ),
 
         # clean up:

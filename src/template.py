@@ -21,11 +21,11 @@ pipeline = Pipeline(
         ),
         SaveToFile(
             input='norm',
-            output='norm',
+            output='norm/norm.csv',
         ),
 
         # clean up:
-        ExecuteSql('drop table original'),
-        ExecuteSql('drop table norm'),
+        ExecuteSql(query='drop table original'),
+        ExecuteSql(query='drop table norm'),
     ]
 )
