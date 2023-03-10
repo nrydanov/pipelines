@@ -9,37 +9,35 @@ Create a new folder and run `pipelines init` inside of it.
 It will create a file named `pipeline.py` with the following content:
 
 ```python
-from pipelines import tasks, Pipeline
-from pipelines.tasks import sql_create_table_as, load_file_to_db, save_table_to_file
+from pipelines.pipeline import Pipeline
+from pipelines.tasks import LoadFileToDb, CreateTableAs, SaveToFile, ExecuteSql
 
 NAME = 'test_project'
-SCHEMA = 'public'
-YEAR_SUFFIX = '2023'
+VERSION = "0.1.0"
 
 pipeline = Pipeline(
     name=NAME,
-    schema=SCHEMA,
     version=VERSION,
     tasks=[
-        load_file_to_db(
+        LoadFileToDb(
             input='original/original.csv',
             output='original',
         ),
-        sql_create_table_as(
+        CreateTableAs(
             table='norm',
             query='''
                 select *, domain_of_url(url)
-                from {original};
+                from original;
             '''
         ),
-        tasks.CopyToFile(
+        SaveToFile(
             input='norm',
-            output='norm',
+            output='norm/norm.csv',
         ),
 
         # clean up:
-        sql('drop table {original}'),
-        sql('drop table {norm}'),
+        ExecuteSql(query='drop table original'),
+        ExecuteSql(query='drop table norm'),
     ]
 )
 ```
@@ -52,9 +50,14 @@ The idea of this pipeline is to load the existing file with URLs and normalize t
 ```shell
 > pipelines tasks
 Tasks:
- 1: load_file_to_db [original]: original/original.csv -> original
- 2: ctas [norm]: norm
- 3: copy_to_file [norm]: norm -> norm.csv.gz
+LoadFileToDb: data/original/original.csv -> original
+CreateTableAs: norm, 
+                select *, domain_of_url(url)
+                from original;
+            
+SaveToFile: norm -> data/norm/norm.csv
+ExecuteSql: drop table original
+ExecuteSql: drop table norm
 ```
 
 ### Add files
@@ -78,48 +81,41 @@ Now you can add it to your data sources using following command:
 
 ```shell
 > pipelines add original.csv
-data/original/original.csv
 ```
 
 ### Running the pipeline
 
 ```shell
-> pipeline list
+> pipeline tasks
 Error: No pipeline found in the current directory!
 
 > cd test_project
-> pipeline list
-...
-> pipeline run
-...
+> pipeline tasks
+Tasks:
+LoadFileToDb: data/original/original.csv -> original
+CreateTableAs: norm, 
+                select *, domain_of_url(url)
+                from original;
+            
+SaveToFile: norm -> data/norm/norm.csv
+ExecuteSql: drop table original
+ExecuteSql: drop table norm
 ```
 
 Now, when we have all the dependencies in place, we can run the pipeline using `pipelines run`.
 
 ```shell
 > pipelines run
-Running task 1: load_file_to_db [original]: original/original.csv -> original
-0 original/original.csv original
-Loading file original/original.csv
-Dropping table 'public.test_project_2023_original'
-drop true
-'COPY 2'
-Task took 0.385 seconds
-
-Running task 2: ctas [norm]: norm
-drop table if exists public.test_project_2023_norm;
-create table public.test_project_2023_norm as
-select *, domain_of_url(url)
-from public.test_project_2023_original;
-
-SELECT 2
-Task took 0.812 seconds
-
---------------------------------------------------------------------------------
-Running task 3: copy_to_file [norm]: norm -> norm.csv.gz
-Writing data to file: norm.csv.gz
-COPY 2
-Task took 0.027 seconds
+Running task 1
+Task took 0.07383 seconds
+Running task 2
+Task took 0.06311 seconds
+Running task 3
+Task took 0.060276 seconds
+Running task 4
+Task took 0.023472 seconds
+Running task 5
+Task took 0.022453 seconds
 ```
 
 ### Results
