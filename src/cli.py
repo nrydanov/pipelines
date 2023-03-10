@@ -4,7 +4,11 @@ from shutil import copy2
 
 import click
 
-from pipelines.tasks import list_tasks
+def get_pipeline():
+  spec = spec_from_file_location("pipeline", "pipeline.py")
+  pipeline = module_from_spec(spec)
+  spec.loader.exec_module(pipeline)
+  return pipeline
 
 @click.group()
 def cli():
@@ -12,9 +16,7 @@ def cli():
 
 @cli.command()
 def run():
-  spec = spec_from_file_location("pipeline", "pipeline.py")
-  pipeline = module_from_spec(spec)
-  spec.loader.exec_module(pipeline)
+  pipeline = get_pipeline()
   pipeline.pipeline.run()
 
 @cli.command()
@@ -32,8 +34,5 @@ def add(path):
 
 @cli.command("tasks")
 def available_tasks():
-  lst = list_tasks()
-  num = 1
-  for (name, _) in lst:
-    print(f"{num}. {name}")
-    num += 1
+  pipeline = get_pipeline()
+  pipeline.pipeline.list_tasks()

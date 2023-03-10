@@ -1,16 +1,11 @@
-import sys, inspect, os
+import os
 
 from pathlib import Path
 
 import pandas as pd
 from sqlalchemy import text
 
-from .base import SqlTask
-
-def list_tasks():
-    is_task = lambda member: inspect.isclass(member) and member.__module__ == __name__
-    tasks = inspect.getmembers(sys.modules[__name__], is_task)
-    return tasks
+from pipelines.base import SqlTask
 
 class ExecuteSql(SqlTask):
   def __init__(self, **kwargs) -> None:
@@ -21,6 +16,9 @@ class ExecuteSql(SqlTask):
     with self._engine.connect() as conn:
       conn.execute(text(self.query))
       conn.commit()
+      
+  def description(self):
+    return f'{self.__class__.__name__}: {self.query}'
   
 class SaveToFile(SqlTask):
   
@@ -34,6 +32,9 @@ class SaveToFile(SqlTask):
     with self._engine.connect() as conn:  
       df = pd.read_sql(self.input, conn)
       df.to_csv(self.output)
+      
+  def description(self):
+    return f'{self.__class__.__name__}: {self.input} -> {self.output}'
 
 class LoadFileToDb(SqlTask):
   
@@ -48,6 +49,9 @@ class LoadFileToDb(SqlTask):
       conn.execute(text(f"DROP TABLE IF EXISTS {self.output}"))
       conn.commit()
       df.to_sql(self.output, self._engine)
+      
+  def description(self):
+    return f'{self.__class__.__name__}: {self.input} -> {self.output}'
     
   
 class CreateTableAs(SqlTask):
@@ -66,3 +70,6 @@ class CreateTableAs(SqlTask):
       '''
       conn.execute(text(sql))
       conn.commit()
+      
+  def description(self):
+    return f'{self.__class__.__name__}: {self.table}, {self.query}'

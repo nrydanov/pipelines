@@ -26,3 +26,6 @@ class SqlTask(BaseTask):
 
   def run() -> None:
     pass
+  
+  def description() -> None:
+    pass
