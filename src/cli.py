@@ -34,5 +34,8 @@ def add(path):
 
 @cli.command("tasks")
 def available_tasks():
-  pipeline = get_pipeline()
-  pipeline.pipeline.list_tasks()
+  try:
+    pipeline = get_pipeline()
+    pipeline.pipeline.list_tasks()
+  except FileNotFoundError:
+    print('Error: No pipeline found in the current directory!')
